@@ -5,21 +5,26 @@ const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.getElementById('container').appendChild(renderer.domElement);
 
-// Cube geometry and material
-const geometry = new THREE.BoxGeometry();
-const faceColors = [
-  0xff0000, 0x00ff00, 0x0000ff, // first three faces
-  0xffff00, 0xff00ff, 0x00ffff  // last three faces
+// Load textures
+const loader = new THREE.TextureLoader();
+const materials = [
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face1.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face2.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face3.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face4.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face5.jpg') }),
+  new THREE.MeshBasicMaterial({ map: loader.load('assets/face6.jpg') })
 ];
 
-const materials = faceColors.map(color => new THREE.MeshBasicMaterial({ color }));
+// Cube geometry and mesh
+const geometry = new THREE.BoxGeometry();
 const cube = new THREE.Mesh(geometry, materials);
 scene.add(cube);
 
 // Camera
 camera.position.z = 5;
 
-// OrbitControls
+// OrbitControls for desktop + mobile
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -43,22 +48,23 @@ const mouse = new THREE.Vector2();
 function onPointerDown(event) {
   event.preventDefault();
 
-  // Calculate normalized device coordinates (-1 to +1)
-  if(event.touches) { // mobile touch
+  if(event.touches) {
     mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
-  } else { // mouse click
+  } else {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   }
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObject(cube);
-  
+
   if(intersects.length > 0) {
     const faceIndex = intersects[0].face.materialIndex;
-    // Change the face color randomly
-    cube.material[faceIndex].color.set(Math.random() * 0xffffff);
+    // Replace texture with a random one (cycle textures)
+    const newIndex = Math.floor(Math.random() * 6);
+    cube.material[faceIndex].map = loader.load(`assets/face${newIndex+1}.jpg`);
+    cube.material[faceIndex].needsUpdate = true;
   }
 }
 
@@ -78,7 +84,7 @@ function animate() {
 }
 animate();
 
-// Handle resize
+// Handle window resize
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
